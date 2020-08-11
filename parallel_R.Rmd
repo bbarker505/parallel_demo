@@ -1,0 +1,282 @@
+---
+title: "Introduction To Parallel Processing in R"
+author: "Brittany Barker"
+date: "`r format(Sys.Date(), tz = 'America/Los_Angeles')`"
+output:
+  html_document:
+    df_print: paged
+---
+<style type="text/css">
+body{ /* Normal  */
+      font-size: 14px;
+  }
+p {line-height: 1.5em;}
+</style>
+
+
+
+## Parallel processing
+- **What?** Parallel processing is a type of computation in which many calculations or the execution of processes are carried out simultaneously
+- **Why?** Analayzing very large data sets and/or needing to run a computationally demanding analysis many times can be **very** slow
+- **How?** Until the late 2000’s parallel computing was mainly done on clusters of large numbers of single- or dual-CPU computers. Nowadays even laptops have 2 or 4 CPU cores, and servers with 8, 32 or more cores are common .
+
+In this presentation, I will demonstrate the use and value of the `parallel`, `doParallel`, and `foreach` packages for running analyses in R in parallel.  The demo will center on analyzing very large spatial data sets, but parallel processing in R can be used for **ANY** type of data.  
+
+
+## Demo
+
+The demo uses annual maximum temperature (Tmax) data from the [PRISM data base](https://prism.oregonstate.edu/). PRISM climate data are offered as daily, monthly, or annual rasters and for the 48-state United States. Analyzing PRISM rasters can be very computationally demanding because of their fine spatial resolution (4 km).  We will conduct two different analyses that examine how Tmax has changed in recent years and compare run times with and with out parallel processing.  
+
+
+
+### (1) County-level change in Tmax in July
+
+**Question: For each year between 2016 and 2019, which OR counties experienced the hottest July temps compared to the 30 year average?**  
+
+We will use three data sets: 
+
+  1) Tmax for July for 2016, 2017, 2018 and 2019 (4 rasters)
+  2) Average Tmax for July between 1981-2010 (1 raster)
+  3) U.S. county simple features (sf) object  
+  
+```{r, warning = FALSE, message = FALSE}
+library(dplyr)
+library(raster)
+library(USAboundaries)
+library(sf)
+library(stringr)
+
+
+# Load Tmax raster data from file
+Jul_fls <- list.files("./prism_data/july/", 
+                      pattern = glob2rx("*201*.bil$*"), full.names = TRUE)
+Jul_30yr <- raster("./prism_data/normals/PRISM_tmax_30yr_normal_4kmM2_07_bil.bil") 
+
+# Load county data, extract OR counties, and make into a SpatialPolygonsDataFrame
+countiesOR <- us_counties() %>%
+  mutate(state_county = paste(state_name, name, sep = "_")) %>%
+  filter(state_name == "Oregon") %>%
+  sf::as_Spatial(.)
+```
+
+Take a peek at the raster data - there are 872,505 raster cell values
+```{r}
+Jul_30yr
+
+plot(Jul_30yr)
+```
+
+The `top5_func()` function determines which 5 counties for any given year had the hottest July temps compared to the 30 year average. 
+
+```{r}
+top5_func <- function(x) {
+  rast <- raster(x)
+  # Subtract the 30 year average after converting both from DegC to DegF
+  anom_US <- (rast  * 1.8 + 32) - (Jul_30yr * 1.8 + 32)
+  # Calculated difference (anomoly) in Tmax
+  anom_cnty <- extract(anom_US, countiesOR, fun = mean, df = TRUE) # Summarizes raster values over counties
+  anom_cnty$county <- countiesOR$name
+  anom_cnty$mean_anom <- order(anom_cnty$layer)
+  # Estimate the average change in Tmax for each county
+  anom_cnty %>% 
+    mutate(mean_anom = order(layer)) %>%
+    arrange(mean_anom) %>%
+    filter(mean_anom <= 5) %>%
+    dplyr::select(county, layer) %>% 
+    rename("difference (F)" = "layer")
+}
+```
+
+### Analyze each year sequentially
+
+The list of Tmax rasters for each year may be analyzed sequentially using `lapply()` or a `for` loop
+```{r, warning = FALSE, message = FALSE}
+# Apply the function to the list of Tmax rasters
+system.time(
+  top5.1 <- lapply(Jul_fls, top5_func)
+)
+```
+
+### Analyze years in parallel
+
+Running the analysis sequentially is pretty slow. Instead, Tmax data for each year can be anlayzed in parallel.  First, we need to create a parallel socket cluster (another word for core) using `parallel:makeCluster()`, which creates a user-specified number of copies of R to run in parallel. Be warned that specifying too many cores may overload your computer and potentially crash processes and programs (including R). 
+
+Since only 4 Tmax data sets are being anlayzed, it is pointless to specify more than 4 cores. Let's compare run times using 2 vs. 4 cores.
+
+```{r}
+library(parallel)
+
+cl.2 <- makeCluster(2)
+cl.4 <- makeCluster(4)
+```
+
+At least two approaches may be used to run the analysis in parallel.    
+
+#### **Approach 1** 
+A `foreach::foreach()` loop is essentially a hybrid of the standard `for()` loop and the `lapply()` function, and provides a looping construct for executing R code repeatedly in parallel. The `doParallel` package provides the backend to execute the `foreach()` loop.
+
+```{r, warning = FALSE, message = FALSE}
+library(foreach)
+library(doParallel)
+
+# Analysis using 2 cores
+registerDoParallel(cl.2) # Register the parallel backend
+system.time(
+  # The required R packages must be specified in a foreach loop
+  top5.2 <- foreach(fl = Jul_fls, .packages = c("raster", "dplyr"))
+  %dopar% { 
+    top5_func(fl)
+  }
+)
+```
+
+You should stop the clusters after you're done.
+
+```{r}
+stopCluster(cl.2)
+```
+
+````{r}
+# Analysis using 4 cores
+registerDoParallel(cl.4)
+system.time(
+  top5.3 <- foreach(fl = Jul_fls, .packages = c("raster", "dplyr"))
+  %dopar% { 
+    top5_func(fl)
+  }
+)
+
+stopCluster(cl.4) # Stop cluster
+```
+
+
+#### **Approach 2** 
+The `parallel::mclapply()` function is analogous to `lapply()`, but it distributes the tasks to multiple processors. Unfortunately, `mclapply()` does not work on Windows machines because its implementation relies on forking and Windows does not support forking. 
+
+```{r}
+
+# Analysis using 2 cores
+#registerDoParallel(cl.2) 
+system.time(
+  top5.4 <- mclapply(Jul_fls, top5_func, mc.cores = 2)
+)
+
+```
+```{r}
+# Analysis using 4 cores
+system.time(
+  top5.5 <- mclapply(Jul_fls, top5_func, mc.cores = 4)
+)
+```
+
+### Results
+Multnomah county was in the list of top 5 counties which had a hotter than average July for two years in a row (2017 and 2018). It looks like July max temps across OR counties in 2016 and 2019 were in fact cooler than the 30 year average.
+
+```{r}
+names(top5.1) <- as.character(2016:2019)
+top5.1 
+```
+
+
+### (2) Changes in annual maximum temperatures in Oregon between 2000 and 2019  
+
+**Question: What was the trend in annual Tmax across Oregon in 1990-1999, 2000-2010, and 2011-2019?**    
+
+### Load, crop, and subset annual Tmax rasters
+
+```{r}
+# Load and crop Tmax data for entire U.S. for all years between 2000 and 2019
+USA <- stack(list.files(path = paste0(getwd(), "/prism_data/annual/"),
+                        pattern = ".bil$*", full.names = TRUE)) # A stack of rasters
+OR <- crop(USA, extent(-124.7294, -116.2949, 41.7150, 46.4612)) # Crop the raster stack
+
+# Separate rasters by decade (2000-2010 vs. 2011-2019) 
+OR.90_99 <- OR[[1:10]]
+OR.00_10 <- OR[[11:21]] 
+OR.11_19 <- OR[[22:30]]
+OR_sets <- list(OR.90_99, OR.00_10, OR.11_19)
+```
+
+
+### Slope function
+
+The `slope_func()` function below calculates the slope at each raster grid cell, which provides insight into the direction of change in annual Tmax for each decade.
+
+```{r}
+slope_func <- function(r) {
+  years <- str_split_fixed(names(r), "_", 6)[,5]
+  if (all(is.na(r))) {
+    NA
+  } else {
+    m <- lm(r ~ years); summary(m)$coefficients[2] # Calculates the slope
+  }
+}
+```
+
+
+### Analyze trend of annual Tmax for each decade sequentially
+
+```{r}
+system.time(
+  slopes <- lapply(OR_sets, function(x) {
+    calc(x, slope_func)
+  })
+)
+```
+
+
+### Analyze trend of annual Tmax for decades in parallel
+
+#### **Approach 1** 
+Using a `foreach()` loop with 3 cores, since the analysis is being conducted on 3 data sets.
+
+```{r}
+cl.3 <- makeCluster(3)
+registerDoParallel(cl.3)
+
+system.time(
+  slopes <- foreach(set = OR_sets, 
+                    .packages = c("raster", "stringr")) %dopar% { 
+    calc(set, slope_func)
+  }
+)
+
+stopCluster(cl.3)
+```
+
+
+#### **Approach 2** 
+Using `mclapply()`
+
+```{r}
+system.time(
+  slopes <- mclapply(OR_sets, function(x) {
+    calc(x, slope_func)
+  }, mc.cores = 3)
+)
+```
+
+### Results
+
+```{r}
+# Look at the results
+names(slopes[[1]]) <- c("dec.1990_1999")
+names(slopes[[2]]) <- c("dec.2000_2010")
+names(slopes[[3]]) <- c("dec.2011_2019")
+plot(stack(slopes[[1]], slopes[[2]], slopes[[3]]))
+```
+
+It looks like annual Tmax increased more in Central Oregon than along the Oregon coast over the last 20 years.
+
+### Wrap-up
+Parallel processing in R can significantly reduce run times. Here we saw that run times were cut in half or two thirds depending on the analysis. Run times would be cut even further if I had analyzed more than 3 or 4 data sets. For example, analyzing county-level change in Tmax in July across counties of multiple U.S. states would take much longer. In this case, I could conduct parallel processing using even more cores, in addition to finding other potential tools to make processing more efficient. 
+
+### Potentially useful vignettes, demos, and introductions include
+- The `multidplyr()` [package](https://rdrr.io/github/hadley/multidplyr/) partitions a data frame across multiple worker processes to provide simple multicore parallelism  
+- A `foreach()` [vignette](https://cran.r-project.org/web/packages/foreach/vignettes/foreach.html)   
+- R-bloggers demo [Let's be Faster and more Parallel in R with doParallel package](https://www.r-bloggers.com/lets-be-faster-and-more-parallel-in-r-with-doparallel-package/)  
+- [How to go parallel in R - basics + tips](http://gforge.se/2015/02/how-to-go-parallel-in-r-basics-tips/#The_foreach_package) with emphasis on `foreach()`  
+- Introduction to [Parallel computing in R](https://psu-psychology.github.io/r-bootcamp-2018/talks/parallel_r.html)  
+- [Quick Intro to Parallel Computing in R](https://nceas.github.io/oss-lessons/parallel-computing-in-r/parallel-computing-in-r.html) using remote sensing data  
+- [Efficient Looping with R](http://ethen8181.github.io/Business-Analytics/R/efficient_looping/efficient_looping.html)  
+- [Examples of functions in the parallel package](https://www.r-bloggers.com/simple-parallel-processing-in-r)

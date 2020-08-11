@@ -1,0 +1,9 @@
+{
+    "path" : "~/parallel_demo",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}

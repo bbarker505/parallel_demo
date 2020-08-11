@@ -1,0 +1,18 @@
+"0","system.time(
+  # The required R packages must be specified in a foreach loop
+  top5.2 <- foreach(fl = Jul_fls, .packages = c(""raster"", ""dplyr""))
+  %dopar% { 
+    top5_func(fl)
+  }
+)
+"
+"1","   user "
+"1"," system "
+"1","elapsed "
+"1","
+"
+"1","  0.298 "
+"1","  0.012 "
+"1","  7.466 "
+"1","
+"

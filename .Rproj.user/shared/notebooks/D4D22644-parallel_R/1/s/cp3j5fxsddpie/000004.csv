@@ -1,16 +1,15 @@
-"0","system.time(
-  slopes <- lapply(OR_sets, function(x) {
-    calc(x, slope_func)
-  })
-)
-"
+"0","system.time("
+"0","  slopes <- lapply(OR_sets, function(x) {"
+"0","    calc(x, slope_func)"
+"0","  })"
+"0",")"
 "1","   user "
 "1"," system "
 "1","elapsed "
 "1","
 "
-"1"," 88.314 "
-"1","  0.181 "
-"1"," 88.511 "
+"1"," 94.346 "
+"1","  1.422 "
+"1"," 95.783 "
 "1","
 "

@@ -99,7 +99,9 @@ system.time(
 
 ### Analyze years in parallel
 
-Running the analysis sequentially is pretty slow. Instead, Tmax data for each year can be anlayzed in parallel.  First, we need to create a parallel socket cluster (another word for core) using `parallel::makeCluster`, which creates a user-specified number of copies of R to run in parallel. Be warned that specifying too many cores may overload your computer and potentially crash processes and programs (including R). 
+Running the analysis sequentially is pretty slow. Instead, Tmax data for each year can be anlayzed in parallel. 
+
+First, we need to create a parallel socket cluster (another word for core) using `parallel::makeCluster`, which creates a user-specified number of copies of R to run in parallel. Be warned that specifying too many cores may overload your computer and potentially crash processes and programs (including R). 
 
 Since only 4 Tmax data sets are being anlayzed, it is pointless to specify more than 4 cores. Let's compare run times using 2 vs. 4 cores.
 
@@ -118,7 +120,7 @@ A `foreach::foreach` loop is essentially a hybrid of the standard `for` loop and
 Comparing a `foreach` loop to a `for` loop  
 - The `%dopar%` function exports the tasks to parallel execution workers  
 - A `foreach` loop returns a list of results by default (the `.combine` option can be used to specify how results are returned)  
-- R packages that are needed to complete the task are specified in a `foreach` loop  
+- The R packages needed to complete the work must be specified in a `foreach` loop  
 - Objects in a `foreach` loop are not in the global environment unless you export them  
 
 ```{r, warning = FALSE, message = FALSE}
@@ -157,7 +159,11 @@ stopCluster(cl.4) # Stop cluster
 
 
 #### **Approach 2**: mclapply
-The `parallel::mclapply` function is analogous to `lapply`, but it distributes the tasks to multiple processors. Unfortunately, `mclapply` does not work on Windows machines because its implementation relies on forking and Windows does not support forking. 
+The `parallel::mclapply` function is analogous to `lapply`, but it distributes the tasks to multiple processors.  
+
+Unfortunately, `mclapply` does not work on Windows machines because its implementation relies on forking and Windows does not support forking. 
+
+By default, mclapply will use all cores available to it. You can specify the number of cores to use with the `mc.cores` option.
 
 ```{r}
 
@@ -280,20 +286,20 @@ It looks like annual Tmax increased more in Central Oregon than along the Oregon
 
 ### Wrap-up
 
-Parallel processing in R can significantly reduce run times 
-- In this demo, run times were cut in half or two thirds depending on the analysis  
+Parallel processing in R can significantly reduce run times   
+- In this demo, run times were cut in half or two thirds depending on the analysis   
 - Time savings between sequential vs. parallel computations would be even greater if we had analyzed even more data sets in parallel  
 - For example, let's say we analyzed changes in Tmax in July across all U.S. counties and we had access to 24 cores  
 
-When to consider using parallel processing in R  
+Consider using parallel processing in R when  
 - You need to implement repetitive tasks  
-- There is no other way to speed up computations, and it's slowing down your work flow too much  
-- You have access to enough cores to make a notable difference in speed  
+- There is no other way to speed up computations  
+- You have access to enough cores to make a notable difference in speed    
 
-Situations where it might not be worth it  
-- When you're overloading your computer so much that programs are stalling or you can't use your computer while the analysis is running  
-- For example, some data sets are so large that your computer may become overloaded even when analyzing two of them in parallel  
-- When you're able to speed up an analysis by other means (e.g. a more efficient function)  
+It might not be worth it when  
+- It's overloading your computer and causing programs to stall or crash  
+- This may happen if your data set is extremely large, such that using even 2 or 3 cores is too much  
+- You're able to speed up an analysis by other means (e.g. a more efficient function)  
 
 
 ### Potentially useful vignettes, demos, and introductions

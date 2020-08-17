@@ -1,17 +1,19 @@
-"0","system.time(
-  top5.3 <- foreach(fl = Jul_fls, .packages = c(""raster"", ""dplyr""))
-  %dopar% { 
-    top5_func(fl)
-  }
-)
-"
+"0","# Analysis using 4 cores"
+"0","registerDoParallel(cl.4)"
+"0","system.time("
+"0","  top5.3 <- foreach(fl = Jul_fls, .packages = c(""raster"", ""dplyr""))"
+"0","  %dopar% { "
+"0","    top5_func(fl)"
+"0","  }"
+"0",")"
 "1","   user "
 "1"," system "
 "1","elapsed "
 "1","
 "
-"1","  0.038 "
-"1","  0.003 "
-"1","  4.902 "
+"1","  0.141 "
+"1","  0.012 "
+"1","  5.463 "
 "1","
 "
+"0","stopCluster(cl.4) # Stop cluster"

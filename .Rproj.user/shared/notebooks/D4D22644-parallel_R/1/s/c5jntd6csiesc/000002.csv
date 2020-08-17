@@ -1,14 +1,14 @@
-"0","system.time(
-  top5.1 <- lapply(Jul_fls, top5_func)
-)
-"
+"0","# Apply the function to the list of Tmax rasters"
+"0","system.time("
+"0","  top5.1 <- lapply(Jul_fls, top5_func)"
+"0",")"
 "1","   user "
 "1"," system "
 "1","elapsed "
 "1","
 "
-"1"," 10.677 "
-"1","  0.167 "
-"1"," 10.845 "
+"1"," 11.775 "
+"1","  0.133 "
+"1"," 11.911 "
 "1","
 "

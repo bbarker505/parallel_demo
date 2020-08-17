@@ -1,8 +1,0 @@
-"0","countiesOR <- us_counties() %>%
-  mutate(state_county = paste(state_name, name, sep = ""_"")) %>%
-  filter(state_name == ""Oregon"") %>%
-  as(., ""Spatial"")
-"
-"2","Error in as(., ""Spatial"") : 
-  no method or default for coercing “data.frame” to “Spatial”
-"

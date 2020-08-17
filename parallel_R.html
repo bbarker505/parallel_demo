@@ -11,7 +11,7 @@
 
 <meta name="author" content="Brittany Barker" />
 
-<meta name="date" content="2020-08-14" />
+<meta name="date" content="2020-08-16" />
 
 <title>Introduction To Parallel Processing in R</title>
 
@@ -182,7 +182,7 @@ summary {
 
 <h1 class="title toc-ignore">Introduction To Parallel Processing in R</h1>
 <h4 class="author">Brittany Barker</h4>
-<h4 class="date">2020-08-14</h4>
+<h4 class="date">2020-08-16</h4>
 
 </div>
 
@@ -269,11 +269,12 @@ system.time(
   top5.1 &lt;- lapply(Jul_fls, top5_func)
 )</code></pre>
 <pre><code>##    user  system elapsed 
-##  10.173   0.057  10.232</code></pre>
+##  10.167   0.047  10.218</code></pre>
 </div>
 <div id="analyze-years-in-parallel" class="section level3">
 <h3>Analyze years in parallel</h3>
-<p>Running the analysis sequentially is pretty slow. Instead, Tmax data for each year can be anlayzed in parallel. First, we need to create a parallel socket cluster (another word for core) using <code>parallel::makeCluster</code>, which creates a user-specified number of copies of R to run in parallel. Be warned that specifying too many cores may overload your computer and potentially crash processes and programs (including R).</p>
+<p>Running the analysis sequentially is pretty slow. Instead, Tmax data for each year can be anlayzed in parallel.</p>
+<p>First, we need to create a parallel socket cluster (another word for core) using <code>parallel::makeCluster</code>, which creates a user-specified number of copies of R to run in parallel. Be warned that specifying too many cores may overload your computer and potentially crash processes and programs (including R).</p>
 <p>Since only 4 Tmax data sets are being anlayzed, it is pointless to specify more than 4 cores. Let's compare run times using 2 vs. 4 cores.</p>
 <pre class="r"><code>library(parallel)
 
@@ -286,7 +287,7 @@ cl.4 &lt;- makeCluster(4)</code></pre>
 <p>Comparing a <code>foreach</code> loop to a <code>for</code> loop<br />
 - The <code>%dopar%</code> function exports the tasks to parallel execution workers<br />
 - A <code>foreach</code> loop returns a list of results by default (the <code>.combine</code> option can be used to specify how results are returned)<br />
-- R packages that are needed to complete the task are specified in a <code>foreach</code> loop<br />
+- The R packages needed to complete the work must be specified in a <code>foreach</code> loop<br />
 - Objects in a <code>foreach</code> loop are not in the global environment unless you export them</p>
 <pre class="r"><code>library(foreach)
 library(doParallel)
@@ -301,7 +302,7 @@ system.time(
   }
 )</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.182   0.002   7.425</code></pre>
+##   0.194   0.003   7.877</code></pre>
 <p>You should stop the clusters after you're done.</p>
 <pre class="r"><code>stopCluster(cl.2)</code></pre>
 <pre class="r"><code># Analysis using 4 cores
@@ -313,25 +314,27 @@ system.time(
   }
 )</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.137   0.000   4.984</code></pre>
+##   0.129   0.000   5.290</code></pre>
 <pre class="r"><code>stopCluster(cl.4) # Stop cluster</code></pre>
 </div>
 <div id="approach-2-mclapply" class="section level4">
 <h4><strong>Approach 2</strong>: mclapply</h4>
-<p>The <code>parallel::mclapply</code> function is analogous to <code>lapply</code>, but it distributes the tasks to multiple processors. Unfortunately, <code>mclapply</code> does not work on Windows machines because its implementation relies on forking and Windows does not support forking.</p>
+<p>The <code>parallel::mclapply</code> function is analogous to <code>lapply</code>, but it distributes the tasks to multiple processors.</p>
+<p>Unfortunately, <code>mclapply</code> does not work on Windows machines because its implementation relies on forking and Windows does not support forking.</p>
+<p>By default, mclapply will use all cores available to it. You can specify the number of cores to use with the <code>mc.cores</code> option.</p>
 <pre class="r"><code># Analysis using 2 cores
 #registerDoParallel(cl.2) 
 system.time(
   top5.4 &lt;- mclapply(Jul_fls, top5_func, mc.cores = 2)
 )</code></pre>
 <pre><code>##    user  system elapsed 
-##   4.742   0.277   5.085</code></pre>
+##   4.788   0.248   5.779</code></pre>
 <pre class="r"><code># Analysis using 4 cores
 system.time(
   top5.5 &lt;- mclapply(Jul_fls, top5_func, mc.cores = 4)
 )</code></pre>
 <pre><code>##    user  system elapsed 
-##   7.657   0.802   2.900</code></pre>
+##   7.829   0.738   3.213</code></pre>
 </div>
 </div>
 <div id="results" class="section level3">
@@ -409,7 +412,7 @@ OR_sets &lt;- list(OR.90_99, OR.00_10, OR.11_19)</code></pre>
   })
 )</code></pre>
 <pre><code>##    user  system elapsed 
-##  87.452   0.071  87.545</code></pre>
+##  88.177   0.051  88.251</code></pre>
 </div>
 <div id="analyze-trend-of-annual-tmax-for-decades-in-parallel" class="section level3">
 <h3>Analyze trend of annual Tmax for decades in parallel</h3>
@@ -426,7 +429,7 @@ system.time(
   }
 )</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.030   0.003  32.207</code></pre>
+##   0.023   0.004  32.674</code></pre>
 <pre class="r"><code>stopCluster(cl.3)</code></pre>
 </div>
 <div id="approach-2-mclapply-1" class="section level4">
@@ -438,7 +441,7 @@ system.time(
   }, mc.cores = 3)
 )</code></pre>
 <pre><code>##    user  system elapsed 
-##  58.344   0.760  32.865</code></pre>
+##  60.500   0.624  32.422</code></pre>
 </div>
 </div>
 <div id="results-1" class="section level3">
@@ -454,17 +457,18 @@ plot(stack(slopes[[1]], slopes[[2]], slopes[[3]]))</code></pre>
 </div>
 <div id="wrap-up" class="section level3">
 <h3>Wrap-up</h3>
-<p>Parallel processing in R can significantly reduce run times - In this demo, run times were cut in half or two thirds depending on the analysis<br />
+<p>Parallel processing in R can significantly reduce run times<br />
+- In this demo, run times were cut in half or two thirds depending on the analysis<br />
 - Time savings between sequential vs. parallel computations would be even greater if we had analyzed even more data sets in parallel<br />
 - For example, let's say we analyzed changes in Tmax in July across all U.S. counties and we had access to 24 cores</p>
-<p>When to consider using parallel processing in R<br />
+<p>Consider using parallel processing in R when<br />
 - You need to implement repetitive tasks<br />
-- There is no other way to speed up computations, and it's slowing down your work flow too much<br />
+- There is no other way to speed up computations<br />
 - You have access to enough cores to make a notable difference in speed</p>
-<p>Situations where it might not be worth it<br />
-- When you're overloading your computer so much that programs are stalling or you can't use your computer while the analysis is running<br />
-- For example, some data sets are so large that your computer may become overloaded even when analyzing two of them in parallel<br />
-- When you're able to speed up an analysis by other means (e.g. a more efficient function)</p>
+<p>It might not be worth it when<br />
+- It's overloading your computer and causing programs to stall or crash<br />
+- This may happen if your data set is extremely large, such that using even 2 or 3 cores is too much<br />
+- You're able to speed up an analysis by other means (e.g. a more efficient function)</p>
 </div>
 <div id="potentially-useful-vignettes-demos-and-introductions" class="section level3">
 <h3>Potentially useful vignettes, demos, and introductions</h3>

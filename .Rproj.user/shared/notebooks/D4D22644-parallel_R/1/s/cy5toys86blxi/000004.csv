@@ -1,18 +1,21 @@
-"0","system.time(
-  # The required R packages must be specified in a foreach loop
-  top5.2 <- foreach(fl = Jul_fls, .packages = c(""raster"", ""dplyr""))
-  %dopar% { 
-    top5_func(fl)
-  }
-)
-"
+"0","library(foreach)"
+"0","library(doParallel)"
+"0","# Analysis using 2 cores"
+"0","registerDoParallel(cl.2) # Register the parallel backend"
+"0","system.time("
+"0","  # The required R packages must be specified in a foreach loop"
+"0","  top5.2 <- foreach(fl = Jul_fls, .packages = c(""raster"", ""dplyr""))"
+"0","  %dopar% { "
+"0","    top5_func(fl)"
+"0","  }"
+"0",")"
 "1","   user "
 "1"," system "
 "1","elapsed "
 "1","
 "
-"1","  0.298 "
-"1","  0.012 "
-"1","  7.466 "
+"1","  0.226 "
+"1","  0.009 "
+"1","  8.003 "
 "1","
 "

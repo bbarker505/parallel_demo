@@ -1,26 +1,19 @@
-"0","cl.3 <- makeCluster(3)
-cl.3 <- makeCluster(3)
-registerDoParallel(cl.3)
-registerDoParallel(cl.3)
-system.time(
-  slopes <- foreach(set = OR_sets, 
-                    .packages = c(""raster"", ""stringr"")) %dopar% { 
-    calc(set, slope_func)
-  }
-)
+"0","cl.3 <- makeCluster(3)"
+"0","registerDoParallel(cl.3)"
+"0","system.time("
+"0","  slopes <- foreach(set = OR_sets, "
+"0","                    .packages = c(""raster"", ""stringr"")) %dopar% { "
+"0","    calc(set, slope_func)"
+"0","  }"
+"0",")"
+"1","   user "
+"1"," system "
+"1","elapsed "
+"1","
 "
-"2","Warning in .Internal(gc(verbose, reset, full)) :"
-"2","
- "
-"2"," closing unused connection 5 (<-localhost.localdomain:11542)
+"1","  0.050 "
+"1","  0.057 "
+"1"," 32.671 "
+"1","
 "
-"2","Warning in .Internal(gc(verbose, reset, full)) :"
-"2","
- "
-"2"," closing unused connection 4 (<-localhost.localdomain:11542)
-"
-"2","Warning in .Internal(gc(verbose, reset, full)) :"
-"2","
- "
-"2"," closing unused connection 3 (<-localhost.localdomain:11542)
-"
+"0","stopCluster(cl.3)"

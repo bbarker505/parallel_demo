@@ -17,7 +17,7 @@ p {line-height: 1.5em;}
 
 ## Parallel processing
 - **What?** Parallel processing is a type of computation in which many calculations or the execution of processes are carried out simultaneously
-- **Why?** Analayzing very large data sets and/or needing to run a computationally demanding analysis many times can be **very** slow
+- **Why?** Analyzing very large data sets and/or needing to run a computationally demanding analysis many times can be **very** slow
 - **How?** Until the late 2000’s parallel computing was mainly done on clusters of large numbers of single- or dual-CPU computers. Nowadays even laptops have 2 or 4 CPU cores, and servers with 8, 32 or more cores are common .
 
 In this presentation, I will demonstrate the use and value of the `parallel`, `doParallel`, and `foreach` packages for running analyses in R in parallel.  The demo will center on analyzing very large spatial data sets, but parallel processing in R can be used for **ANY** type of data.  
@@ -66,7 +66,7 @@ Jul_30yr
 plot(Jul_30yr)
 ```
 
-The `top5_func()` function determines which 5 counties for any given year had the hottest July temps compared to the 30 year average. 
+The `top5_func` function determines which 5 counties for any given year had the hottest July temps compared to the 30 year average. 
 
 ```{r}
 top5_func <- function(x) {
@@ -89,7 +89,7 @@ top5_func <- function(x) {
 
 ### Analyze each year sequentially
 
-The list of Tmax rasters for each year may be analyzed sequentially using `lapply()` or a `for` loop
+The list of Tmax rasters for each year may be analyzed sequentially using `lapply` or a `for` loop
 ```{r, warning = FALSE, message = FALSE}
 # Apply the function to the list of Tmax rasters
 system.time(
@@ -99,7 +99,7 @@ system.time(
 
 ### Analyze years in parallel
 
-Running the analysis sequentially is pretty slow. Instead, Tmax data for each year can be anlayzed in parallel.  First, we need to create a parallel socket cluster (another word for core) using `parallel:makeCluster()`, which creates a user-specified number of copies of R to run in parallel. Be warned that specifying too many cores may overload your computer and potentially crash processes and programs (including R). 
+Running the analysis sequentially is pretty slow. Instead, Tmax data for each year can be anlayzed in parallel.  First, we need to create a parallel socket cluster (another word for core) using `parallel::makeCluster`, which creates a user-specified number of copies of R to run in parallel. Be warned that specifying too many cores may overload your computer and potentially crash processes and programs (including R). 
 
 Since only 4 Tmax data sets are being anlayzed, it is pointless to specify more than 4 cores. Let's compare run times using 2 vs. 4 cores.
 
@@ -112,8 +112,14 @@ cl.4 <- makeCluster(4)
 
 At least two approaches may be used to run the analysis in parallel.    
 
-#### **Approach 1** 
-A `foreach::foreach()` loop is essentially a hybrid of the standard `for()` loop and the `lapply()` function, and provides a looping construct for executing R code repeatedly in parallel. The `doParallel` package provides the backend to execute the `foreach()` loop.
+#### **Approach 1:** foreach 
+A `foreach::foreach` loop is essentially a hybrid of the standard `for` loop and the `lapply` function, and provides a looping construct for executing R code repeatedly in parallel. The `doParallel` package provides the backend to execute the `foreach` loop.  
+
+Comparing a `foreach` loop to a `for` loop  
+- The `%dopar%` function exports the tasks to parallel execution workers  
+- A `foreach` loop returns a list of results by default (the `.combine` option can be used to specify how results are returned)  
+- R packages that are needed to complete the task are specified in a `foreach` loop  
+- Objects in a `foreach` loop are not in the global environment unless you export them  
 
 ```{r, warning = FALSE, message = FALSE}
 library(foreach)
@@ -150,8 +156,8 @@ stopCluster(cl.4) # Stop cluster
 ```
 
 
-#### **Approach 2** 
-The `parallel::mclapply()` function is analogous to `lapply()`, but it distributes the tasks to multiple processors. Unfortunately, `mclapply()` does not work on Windows machines because its implementation relies on forking and Windows does not support forking. 
+#### **Approach 2**: mclapply
+The `parallel::mclapply` function is analogous to `lapply`, but it distributes the tasks to multiple processors. Unfortunately, `mclapply` does not work on Windows machines because its implementation relies on forking and Windows does not support forking. 
 
 ```{r}
 
@@ -170,7 +176,9 @@ system.time(
 ```
 
 ### Results
-Multnomah county was in the list of top 5 counties which had a hotter than average July for two years in a row (2017 and 2018). It looks like July max temps across OR counties in 2016 and 2019 were in fact cooler than the 30 year average.
+Notice how parallel processing using 4 cores is twice as fast as sequential processing. 
+
+Multnomah county was in the list of top 5 counties which had a hotter than average July for two years in a row (2017 and 2018). It looks like July max temps across OR counties in 2016 and 2019 were in fact cooler than the 30 year average. 
 
 ```{r}
 names(top5.1) <- as.character(2016:2019)
@@ -200,7 +208,7 @@ OR_sets <- list(OR.90_99, OR.00_10, OR.11_19)
 
 ### Slope function
 
-The `slope_func()` function below calculates the slope at each raster grid cell, which provides insight into the direction of change in annual Tmax for each decade.
+The `slope_func` function below calculates the slope at each raster grid cell, which provides insight into the direction of change in annual Tmax for each decade.
 
 ```{r}
 slope_func <- function(r) {
@@ -227,8 +235,8 @@ system.time(
 
 ### Analyze trend of annual Tmax for decades in parallel
 
-#### **Approach 1** 
-Using a `foreach()` loop with 3 cores, since the analysis is being conducted on 3 data sets.
+#### **Approach 1**: foreach
+Using a `foreach` loop with 3 cores, since the analysis is being conducted on 3 data sets.
 
 ```{r}
 cl.3 <- makeCluster(3)
@@ -245,8 +253,8 @@ stopCluster(cl.3)
 ```
 
 
-#### **Approach 2** 
-Using `mclapply()`
+#### **Approach 2**: mclapply
+Using `mclapply`
 
 ```{r}
 system.time(
@@ -266,14 +274,31 @@ names(slopes[[3]]) <- c("dec.2011_2019")
 plot(stack(slopes[[1]], slopes[[2]], slopes[[3]]))
 ```
 
+Parallel processing (3 cores) was 3 times faster than sequential processing. 
+
 It looks like annual Tmax increased more in Central Oregon than along the Oregon coast over the last 20 years.
 
 ### Wrap-up
-Parallel processing in R can significantly reduce run times. Here we saw that run times were cut in half or two thirds depending on the analysis. Run times would be cut even further if I had analyzed more than 3 or 4 data sets. For example, analyzing county-level change in Tmax in July across counties of multiple U.S. states would take much longer. In this case, I could conduct parallel processing using even more cores, in addition to finding other potential tools to make processing more efficient. 
 
-### Potentially useful vignettes, demos, and introductions include
-- The `multidplyr()` [package](https://rdrr.io/github/hadley/multidplyr/) partitions a data frame across multiple worker processes to provide simple multicore parallelism  
-- A `foreach()` [vignette](https://cran.r-project.org/web/packages/foreach/vignettes/foreach.html)   
+Parallel processing in R can significantly reduce run times 
+- In this demo, run times were cut in half or two thirds depending on the analysis  
+- Time savings between sequential vs. parallel computations would be even greater if we had analyzed even more data sets in parallel  
+- For example, let's say we analyzed changes in Tmax in July across all U.S. counties and we had access to 24 cores  
+
+When to consider using parallel processing in R  
+- You need to implement repetitive tasks  
+- There is no other way to speed up computations, and it's slowing down your work flow too much  
+- You have access to enough cores to make a notable difference in speed  
+
+Situations where it might not be worth it  
+- When you're overloading your computer so much that programs are stalling or you can't use your computer while the analysis is running  
+- For example, some data sets are so large that your computer may become overloaded even when analyzing two of them in parallel  
+- When you're able to speed up an analysis by other means (e.g. a more efficient function)  
+
+
+### Potentially useful vignettes, demos, and introductions
+- The `multidplyr` [package](https://rdrr.io/github/hadley/multidplyr/) partitions a data frame across multiple worker processes to provide simple multicore parallelism  
+- A `foreach` [vignette](https://cran.r-project.org/web/packages/foreach/vignettes/foreach.html)   
 - R-bloggers demo [Let's be Faster and more Parallel in R with doParallel package](https://www.r-bloggers.com/lets-be-faster-and-more-parallel-in-r-with-doparallel-package/)  
 - [How to go parallel in R - basics + tips](http://gforge.se/2015/02/how-to-go-parallel-in-r-basics-tips/#The_foreach_package) with emphasis on `foreach()`  
 - Introduction to [Parallel computing in R](https://psu-psychology.github.io/r-bootcamp-2018/talks/parallel_r.html)  

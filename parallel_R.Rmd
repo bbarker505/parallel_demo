@@ -187,7 +187,7 @@ stopCluster(cl.4) # Stop cluster
 #### **Approach 2**: mclapply
 The `parallel::mclapply` function is analogous to `lapply`, but it distributes the tasks to multiple processors.  
 
-Unfortunately, `mclapply` does not work on Windows machines because its implementation relies on forking and Windows does not support forking. "Fork" is the name of the Unix call that the parent process uses to "divide" itself ("fork") into two identical processes. Windows uses a threading module for multiprocessing.
+Unfortunately, `mclapply` does not work on Windows machines because its implementation relies on forking and Windows does not support forking. "Fork" is the name of the Unix call that the parent process uses to "divide" itself ("fork") into two identical processes that run independently from each other. Windows uses a threading module for multiprocessing, meaning that the process shares memory and resources.
 
 By default, `mclapply` will use all cores available to it. You can specify the number of cores to use with the `mc.cores` option.
 

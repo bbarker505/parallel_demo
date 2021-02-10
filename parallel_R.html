@@ -304,7 +304,7 @@ top5_sequential &lt;- system.time(
 
 top5_sequential</code></pre>
 <pre><code>##    user  system elapsed 
-##   8.847   3.469  12.264</code></pre>
+##   8.868   3.349  12.242</code></pre>
 </div>
 <div id="analyze-years-in-parallel" class="section level3">
 <h3>Analyze years in parallel</h3>
@@ -338,7 +338,7 @@ top5_foreach_cl2 &lt;- system.time(
 # Run time - 2 cores
 top5_foreach_cl2</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.012   0.000   7.179</code></pre>
+##   0.007   0.004   7.535</code></pre>
 <p>You should stop the clusters after you’re done.</p>
 <pre class="r"><code>stopCluster(cl.2)</code></pre>
 <pre class="r"><code># Analysis using 4 cores
@@ -353,13 +353,13 @@ top5_foreach_cl4 &lt;- system.time(
 # Run time - 4 cores
 top5_foreach_cl4</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.008   0.000   4.309</code></pre>
+##   0.010   0.000   4.537</code></pre>
 <pre class="r"><code>stopCluster(cl.4) # Stop cluster</code></pre>
 </div>
 <div id="approach-2-mclapply" class="section level4">
 <h4><strong>Approach 2</strong>: mclapply</h4>
 <p>The <code>parallel::mclapply</code> function is analogous to <code>lapply</code>, but it distributes the tasks to multiple processors.</p>
-<p>Unfortunately, <code>mclapply</code> does not work on Windows machines because its implementation relies on forking and Windows does not support forking. “Fork” is the name of the Unix call that the parent process uses to “divide” itself (“fork”) into two identical processes. Windows uses a threading module for multiprocessing.</p>
+<p>Unfortunately, <code>mclapply</code> does not work on Windows machines because its implementation relies on forking and Windows does not support forking. “Fork” is the name of the Unix call that the parent process uses to “divide” itself (“fork”) into two identical processes that run independently from each other. Windows uses a threading module for multiprocessing, meaning that the process shares memory and resources.</p>
 <p>By default, <code>mclapply</code> will use all cores available to it. You can specify the number of cores to use with the <code>mc.cores</code> option.</p>
 <pre class="r"><code># Analysis using 2 cores
 top5_mclapply_cl2 &lt;- system.time(
@@ -369,7 +369,7 @@ top5_mclapply_cl2 &lt;- system.time(
 # Run time - 2 cores
 top5_mclapply_cl2</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.003   0.013   6.114</code></pre>
+##   0.001   0.012   6.148</code></pre>
 <pre class="r"><code># Analysis using 4 cores
 top5_mclapply_cl4 &lt;- system.time(
   top5.5 &lt;- mclapply(Jul_fls, top5_func, mc.cores = 4)
@@ -378,7 +378,7 @@ top5_mclapply_cl4 &lt;- system.time(
 # Run time - 4 cores
 top5_mclapply_cl4</code></pre>
 <pre><code>##    user  system elapsed 
-##   6.544   3.282   3.294</code></pre>
+##   0.003   0.017   3.257</code></pre>
 </div>
 </div>
 <div id="compare-run-times-for-top-5-county-analysis" class="section level3">
@@ -402,23 +402,23 @@ knitr::kable(all_times1)</code></pre>
 <tbody>
 <tr class="odd">
 <td align="left">top5_sequential</td>
-<td align="right">12.264</td>
+<td align="right">12.242</td>
 </tr>
 <tr class="even">
 <td align="left">top5_foreach_cl2</td>
-<td align="right">7.179</td>
+<td align="right">7.535</td>
 </tr>
 <tr class="odd">
 <td align="left">top5_foreach_cl4</td>
-<td align="right">4.309</td>
+<td align="right">4.537</td>
 </tr>
 <tr class="even">
 <td align="left">top5_mclapply_cl2</td>
-<td align="right">6.114</td>
+<td align="right">6.148</td>
 </tr>
 <tr class="odd">
 <td align="left">top5_mclapply_cl4</td>
-<td align="right">3.294</td>
+<td align="right">3.257</td>
 </tr>
 </tbody>
 </table>
@@ -499,7 +499,7 @@ OR_sets &lt;- list(OR.90_99, OR.00_10, OR.11_19)</code></pre>
 
 trend_sequential</code></pre>
 <pre><code>##    user  system elapsed 
-##  62.647   0.147  62.798</code></pre>
+##  62.774   0.140  62.916</code></pre>
 </div>
 <div id="analyze-trend-of-annual-tmax-for-decades-in-parallel" class="section level3">
 <h3>Analyze trend of annual Tmax for decades in parallel</h3>
@@ -518,7 +518,7 @@ trend_foreach &lt;- system.time(
 
 trend_foreach</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.008   0.007  22.077</code></pre>
+##   0.011   0.008  22.143</code></pre>
 <pre class="r"><code>stopCluster(cl.3)</code></pre>
 </div>
 <div id="approach-2-mclapply-1" class="section level4">
@@ -532,7 +532,7 @@ trend_foreach</code></pre>
 
 trend_mclapply</code></pre>
 <pre><code>##    user  system elapsed 
-##  41.247   0.342  21.074</code></pre>
+##  41.323   0.337  21.208</code></pre>
 </div>
 </div>
 <div id="tmax-trend-results-and-takeaway" class="section level3">
@@ -555,15 +555,15 @@ knitr::kable(all_times2)</code></pre>
 <tbody>
 <tr class="odd">
 <td align="left">trend_sequential</td>
-<td align="right">62.798</td>
+<td align="right">62.916</td>
 </tr>
 <tr class="even">
 <td align="left">trend_foreach</td>
-<td align="right">22.077</td>
+<td align="right">22.143</td>
 </tr>
 <tr class="odd">
 <td align="left">trend_mclapply</td>
-<td align="right">21.074</td>
+<td align="right">21.208</td>
 </tr>
 </tbody>
 </table>

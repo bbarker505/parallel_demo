@@ -20,7 +20,20 @@ p {line-height: 1.5em;}
 - **Why?** Analyzing very large data sets and/or needing to run a computationally demanding analysis many times can be **very** slow
 - **How?** Until the late 2000’s parallel computing was mainly done on clusters of large numbers of single- or dual-CPU computers. Nowadays even laptops have 2 or 4 CPU cores, and servers with 8, 32 or more cores are common.
 
-In this presentation, I will demonstrate the use and value of the `parallel`, `doParallel`, and `foreach` packages for running analyses in R in parallel.  The demo will center on analyzing very large spatial data sets, but parallel processing in R can be used for **ANY** type of data.  
+## Operating system
+- Your OS and number of CPU cores will affect the speed and capabilities of parallel processing 
+- To check number of cores in Windows, go into "System Information" (shortcut = Windwows+R and type "msinfo32"), and click on "Processor"
+- Multiple commands can check number of cores in Unix-based systems (e.g. Linux)
+- In R, the `detectCores()` function of the `parallel` package returns the number of cores of your OS
+
+```{r, warning = FALSE, message = FALSE}
+library(parallel)
+
+detectCores()
+```
+
+## Purpose of this demo
+In this presentation, I will demonstrate the use and value of the `parallel`, `doParallel`, and `foreach` packages for running analyses in R in parallel.  The demo will center on analyzing very large spatial data sets, but parallel processing in R can be used for **ANY** type of data. We will see how changing the number of cores used for parallel processing affects run times, and how your OS (Windows vs. Unix-based OS) affects processing capabilities.
 
 
 ## Demo
@@ -115,8 +128,6 @@ First, we need to create a parallel socket cluster (another word for core) using
 Since only 4 Tmax data sets are being analyzed, it is pointless to specify more than 4 cores. Let's compare run times using 2 vs. 4 cores.
 
 ```{r}
-library(parallel)
-
 cl.2 <- makeCluster(2)
 cl.4 <- makeCluster(4)
 ```
@@ -319,7 +330,7 @@ all_times2 <- data.frame(rbind(trend_sequential,
 knitr::kable(all_times2)
 ```
 
-It looks like annual Tmax increased more in Central Oregon than along the Oregon coast over the last 30 years. Results for each year were generated much quicker by calculating trends for each year in parallel.
+It looks like annual Tmax exhibited different trends throughout OR if we look at each decade separately, but overall it seems like increases have been higher in the interior parts of the state. Results for each year were generated much quicker by calculating trends for each year in parallel.
 
 ```{r}
 # Look at the trend results
@@ -333,8 +344,8 @@ plot(stack(slopes[[1]], slopes[[2]], slopes[[3]]))
 ### Wrap-up
 Parallel processing in R can significantly reduce run times   
 - In this demo, run times were cut in half or two thirds depending on the analysis   
-- Time savings between sequential vs. parallel computations would be even greater if we had analyzed even more data sets in parallel 
-- For example, let's say we had to analyze changes in Tmax in July across all 3,0006 U.S. counties!  
+- Time savings between sequential vs. parallel computations would be even greater if we had analyzed even more data sets in parallel  
+- For example, let's say we had to analyze changes in Tmax in July across all 3,006 U.S. counties!  
 - Access to servers with numerous cores (24, 48, etc.) may be essential 
 
 Consider using parallel processing in R when  

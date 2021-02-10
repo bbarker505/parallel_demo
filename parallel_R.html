@@ -11,7 +11,7 @@
 
 <meta name="author" content="Brittany Barker" />
 
-<meta name="date" content="2021-02-08" />
+<meta name="date" content="2021-02-10" />
 
 <title>Introduction To Parallel Processing in R</title>
 
@@ -193,7 +193,7 @@ summary {
 
 <h1 class="title toc-ignore">Introduction To Parallel Processing in R</h1>
 <h4 class="author">Brittany Barker</h4>
-<h4 class="date">2021-02-08</h4>
+<h4 class="date">2021-02-10</h4>
 
 </div>
 
@@ -211,7 +211,23 @@ p {line-height: 1.5em;}
 <li><strong>Why?</strong> Analyzing very large data sets and/or needing to run a computationally demanding analysis many times can be <strong>very</strong> slow</li>
 <li><strong>How?</strong> Until the late 2000’s parallel computing was mainly done on clusters of large numbers of single- or dual-CPU computers. Nowadays even laptops have 2 or 4 CPU cores, and servers with 8, 32 or more cores are common.</li>
 </ul>
-<p>In this presentation, I will demonstrate the use and value of the <code>parallel</code>, <code>doParallel</code>, and <code>foreach</code> packages for running analyses in R in parallel. The demo will center on analyzing very large spatial data sets, but parallel processing in R can be used for <strong>ANY</strong> type of data.</p>
+</div>
+<div id="operating-system" class="section level2">
+<h2>Operating system</h2>
+<ul>
+<li>Your OS and number of CPU cores will affect the speed and capabilities of parallel processing</li>
+<li>To check number of cores in Windows, go into “System Information” (shortcut = Windwows+R and type “msinfo32”), and click on “Processor”</li>
+<li>Multiple commands can check number of cores in Unix-based systems (e.g. Linux)</li>
+<li>In R, the <code>detectCores()</code> function of the <code>parallel</code> package returns the number of cores of your OS</li>
+</ul>
+<pre class="r"><code>library(parallel)
+
+detectCores()</code></pre>
+<pre><code>## [1] 16</code></pre>
+</div>
+<div id="purpose-of-this-demo" class="section level2">
+<h2>Purpose of this demo</h2>
+<p>In this presentation, I will demonstrate the use and value of the <code>parallel</code>, <code>doParallel</code>, and <code>foreach</code> packages for running analyses in R in parallel. The demo will center on analyzing very large spatial data sets, but parallel processing in R can be used for <strong>ANY</strong> type of data. We will see how changing the number of cores used for parallel processing affects run times, and how your OS (Windows vs. Unix-based OS) affects processing capabilities.</p>
 </div>
 <div id="demo" class="section level2">
 <h2>Demo</h2>
@@ -288,16 +304,14 @@ top5_sequential &lt;- system.time(
 
 top5_sequential</code></pre>
 <pre><code>##    user  system elapsed 
-##   8.859   3.512  12.388</code></pre>
+##   8.847   3.469  12.264</code></pre>
 </div>
 <div id="analyze-years-in-parallel" class="section level3">
 <h3>Analyze years in parallel</h3>
 <p>Running the analysis sequentially is pretty slow. Instead, Tmax data for each year can be analyzed in parallel.</p>
 <p>First, we need to create a parallel socket cluster (another word for core) using <code>parallel::makeCluster</code>, which creates a user-specified number of copies of R to run in parallel. WARNING: specifying too many cores may overload your computer and potentially crash processes and programs (including R).</p>
 <p>Since only 4 Tmax data sets are being analyzed, it is pointless to specify more than 4 cores. Let’s compare run times using 2 vs. 4 cores.</p>
-<pre class="r"><code>library(parallel)
-
-cl.2 &lt;- makeCluster(2)
+<pre class="r"><code>cl.2 &lt;- makeCluster(2)
 cl.4 &lt;- makeCluster(4)</code></pre>
 <p>At least two approaches may be used to run the analysis in parallel.</p>
 <div id="approach-1-foreach" class="section level4">
@@ -324,7 +338,7 @@ top5_foreach_cl2 &lt;- system.time(
 # Run time - 2 cores
 top5_foreach_cl2</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.013   0.000   7.145</code></pre>
+##   0.012   0.000   7.179</code></pre>
 <p>You should stop the clusters after you’re done.</p>
 <pre class="r"><code>stopCluster(cl.2)</code></pre>
 <pre class="r"><code># Analysis using 4 cores
@@ -339,7 +353,7 @@ top5_foreach_cl4 &lt;- system.time(
 # Run time - 4 cores
 top5_foreach_cl4</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.006   0.003   4.269</code></pre>
+##   0.008   0.000   4.309</code></pre>
 <pre class="r"><code>stopCluster(cl.4) # Stop cluster</code></pre>
 </div>
 <div id="approach-2-mclapply" class="section level4">
@@ -355,7 +369,7 @@ top5_mclapply_cl2 &lt;- system.time(
 # Run time - 2 cores
 top5_mclapply_cl2</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.000   0.012   6.084</code></pre>
+##   0.003   0.013   6.114</code></pre>
 <pre class="r"><code># Analysis using 4 cores
 top5_mclapply_cl4 &lt;- system.time(
   top5.5 &lt;- mclapply(Jul_fls, top5_func, mc.cores = 4)
@@ -364,7 +378,7 @@ top5_mclapply_cl4 &lt;- system.time(
 # Run time - 4 cores
 top5_mclapply_cl4</code></pre>
 <pre><code>##    user  system elapsed 
-##   4.296   2.111   3.241</code></pre>
+##   6.544   3.282   3.294</code></pre>
 </div>
 </div>
 <div id="compare-run-times-for-top-5-county-analysis" class="section level3">
@@ -388,23 +402,23 @@ knitr::kable(all_times1)</code></pre>
 <tbody>
 <tr class="odd">
 <td align="left">top5_sequential</td>
-<td align="right">12.388</td>
+<td align="right">12.264</td>
 </tr>
 <tr class="even">
 <td align="left">top5_foreach_cl2</td>
-<td align="right">7.145</td>
+<td align="right">7.179</td>
 </tr>
 <tr class="odd">
 <td align="left">top5_foreach_cl4</td>
-<td align="right">4.269</td>
+<td align="right">4.309</td>
 </tr>
 <tr class="even">
 <td align="left">top5_mclapply_cl2</td>
-<td align="right">6.084</td>
+<td align="right">6.114</td>
 </tr>
 <tr class="odd">
 <td align="left">top5_mclapply_cl4</td>
-<td align="right">3.241</td>
+<td align="right">3.294</td>
 </tr>
 </tbody>
 </table>
@@ -485,7 +499,7 @@ OR_sets &lt;- list(OR.90_99, OR.00_10, OR.11_19)</code></pre>
 
 trend_sequential</code></pre>
 <pre><code>##    user  system elapsed 
-##  62.784   0.127  62.911</code></pre>
+##  62.647   0.147  62.798</code></pre>
 </div>
 <div id="analyze-trend-of-annual-tmax-for-decades-in-parallel" class="section level3">
 <h3>Analyze trend of annual Tmax for decades in parallel</h3>
@@ -504,7 +518,7 @@ trend_foreach &lt;- system.time(
 
 trend_foreach</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.014   0.000  22.893</code></pre>
+##   0.008   0.007  22.077</code></pre>
 <pre class="r"><code>stopCluster(cl.3)</code></pre>
 </div>
 <div id="approach-2-mclapply-1" class="section level4">
@@ -518,7 +532,7 @@ trend_foreach</code></pre>
 
 trend_mclapply</code></pre>
 <pre><code>##    user  system elapsed 
-##  42.414   0.307  22.247</code></pre>
+##  41.247   0.342  21.074</code></pre>
 </div>
 </div>
 <div id="tmax-trend-results-and-takeaway" class="section level3">
@@ -541,19 +555,19 @@ knitr::kable(all_times2)</code></pre>
 <tbody>
 <tr class="odd">
 <td align="left">trend_sequential</td>
-<td align="right">62.911</td>
+<td align="right">62.798</td>
 </tr>
 <tr class="even">
 <td align="left">trend_foreach</td>
-<td align="right">22.893</td>
+<td align="right">22.077</td>
 </tr>
 <tr class="odd">
 <td align="left">trend_mclapply</td>
-<td align="right">22.247</td>
+<td align="right">21.074</td>
 </tr>
 </tbody>
 </table>
-<p>It looks like annual Tmax increased more in Central Oregon than along the Oregon coast over the last 30 years. Results for each year were generated much quicker by calculating trends for each year in parallel.</p>
+<p>It looks like annual Tmax exhibited different trends throughout OR if we look at each decade separately, but overall it seems like increases have been higher in the interior parts of the state. Results for each year were generated much quicker by calculating trends for each year in parallel.</p>
 <pre class="r"><code># Look at the trend results
 names(slopes[[1]]) &lt;- c(&quot;OR_1990_1999&quot;)
 names(slopes[[2]]) &lt;- c(&quot;OR_2000_2010&quot;)
@@ -566,7 +580,8 @@ plot(stack(slopes[[1]], slopes[[2]], slopes[[3]]))</code></pre>
 <h3>Wrap-up</h3>
 <p>Parallel processing in R can significantly reduce run times<br />
 - In this demo, run times were cut in half or two thirds depending on the analysis<br />
-- Time savings between sequential vs. parallel computations would be even greater if we had analyzed even more data sets in parallel - For example, let’s say we had to analyze changes in Tmax in July across all 3,0006 U.S. counties!<br />
+- Time savings between sequential vs. parallel computations would be even greater if we had analyzed even more data sets in parallel<br />
+- For example, let’s say we had to analyze changes in Tmax in July across all 3,006 U.S. counties!<br />
 - Access to servers with numerous cores (24, 48, etc.) may be essential</p>
 <p>Consider using parallel processing in R when<br />
 - You need to implement repetitive tasks<br />
